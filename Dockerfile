@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-lang-japanese \
     fonts-noto-cjk \
     fonts-noto-cjk-extra \
+    fontconfig \
     poppler-utils \
     cups-client \
     && rm -rf /var/lib/apt/lists/* \
