@@ -14,7 +14,7 @@ from typing import Any
 from app.config import get_settings
 
 settings = get_settings()
-BASE = Path(__file__).resolve().parent.parent  # apps/api
+BASE = Path(__file__).resolve().parent.parent.parent  # apps/api
 TEMPLATES_DIR = BASE / "templates"
 STORAGE_DIR = Path(settings.STORAGE_DIR)
 GENERATED_DIR = STORAGE_DIR / "generated_pdfs"
