@@ -40,22 +40,22 @@
 % ── Header area ────────────────────────────────────────────
 \noindent
 \begin{tikzpicture}[x=1mm,y=1mm]
-  \fill[headerBg, rounded corners=2mm] (0,0) rectangle (269,18);
-  \node[anchor=west, white, font=\large\bfseries] at (6, 12) {マークシート解答用紙};
-  \node[anchor=west, white!70, font=\small] at (6, 5) {\SubjectName};
-  \fill[white, rounded corners=1.5mm] (140, 1.5) rectangle (210, 16.5);
-  \node[anchor=west, headerBg, font=\small\bfseries] at (143, 12) {受験番号};
-  \node[anchor=west, accentBlue, font=\normalsize] at (168, 12) {\ExamNumber};
-  \node[anchor=west, headerBg, font=\small\bfseries] at (143, 5) {氏名};
-  \node[anchor=west, font=\normalsize] at (158, 5) {\CandidateName};
-  \fill[white, rounded corners=1.5mm] (214, 1.5) rectangle (267, 16.5);
-  \node[anchor=north west, font=\fontsize{6.5pt}{8pt}\selectfont, text width=50mm] at (216, 15.5) {%
-    {\bfseries\color{accentBlue}記入方法}\\[1pt]%
-    該当する選択肢を\\HB以上の鉛筆で\\塗りつぶしてください。%
+  \fill[headerBg, rounded corners=1.5mm] (0,0) rectangle (269,14);
+  \node[anchor=west, white, font=\normalsize\bfseries] at (5, 9.5) {マークシート解答用紙};
+  \node[anchor=west, white!70, font=\footnotesize] at (5, 3.5) {\SubjectName};
+  \fill[white, rounded corners=1mm] (120, 1.2) rectangle (190, 12.8);
+  \node[anchor=west, headerBg, font=\footnotesize\bfseries] at (122, 9.5) {受験番号};
+  \node[anchor=west, accentBlue, font=\small] at (143, 9.5) {\ExamNumber};
+  \node[anchor=west, headerBg, font=\footnotesize\bfseries] at (122, 3.5) {氏名};
+  \node[anchor=west, font=\small] at (135, 3.5) {\CandidateName};
+  \fill[white, rounded corners=1mm] (194, 1.2) rectangle (267, 12.8);
+  \node[anchor=north west, font=\fontsize{5.5pt}{7pt}\selectfont, text width=50mm] at (196, 12) {%
+    {\bfseries\color{accentBlue}記入方法}\\[0.5pt]%
+    該当する選択肢をHB以上の鉛筆で塗りつぶしてください。%
   };
 \end{tikzpicture}
 
-\vspace{4mm}
+\vspace{1mm}
 
 % ── Questions section ──────────────────────────────────────
 %%QUESTIONS%%

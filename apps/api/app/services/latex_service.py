@@ -137,17 +137,16 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
     MARGIN_BOTTOM = 14.0
 
     # Top of the question area (distance from TOP of page)
-    # Header is ~25mm, then 4mm gap → questions start at 33mm from top
-    HEADER_OFFSET = 33.0
+    # Header is ~18mm, then 1mm gap → questions start at 22mm from top
+    HEADER_OFFSET = 22.0
 
     # Row spacing
-    ROW_HEIGHT = 7.2      # vertical distance between question centres
-    BUBBLE_RX = 2.5       # horizontal radius of each bubble ellipse
-    BUBBLE_RY = 2.4       # vertical radius of each bubble ellipse
-    BUBBLE_GAP = 9.0      # horizontal distance between bubble centres
+    ROW_HEIGHT = 7.0      # vertical distance between question centres
+    BUBBLE_RX = 2.2       # horizontal radius of each bubble ellipse
+    BUBBLE_RY = 2.0       # vertical radius of each bubble ellipse
 
     # Label column
-    LABEL_COL_W = 14.0    # width for the question number label
+    LABEL_COL_W = 12.0    # width for the question number label
 
     # Overrides from subject config
     try:
@@ -156,7 +155,6 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
             LABEL_COL_W = float(subject.get("label_w", LABEL_COL_W))
             BUBBLE_RX = float(subject.get("bubble_rx", BUBBLE_RX))
             BUBBLE_RY = float(subject.get("bubble_ry", BUBBLE_RY))
-            BUBBLE_GAP = float(subject.get("bubble_gap", BUBBLE_GAP))
             HEADER_OFFSET = float(subject.get("header_offset_mm", HEADER_OFFSET))
     except Exception:
         pass
@@ -183,7 +181,7 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
     # ── Generate TikZ ───────────────────────────────────────
     lines = [
         "% ── Questions block (auto-generated) ──",
-        "\\begin{center}",
+        "\\noindent",
         "\\begin{tikzpicture}[x=1mm,y=1mm]",
     ]
 
@@ -256,12 +254,20 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
 
             qmeta: dict[str, Any] = {"index": global_idx, "label": qlabel, "bubbles": []}
 
+            # Dynamically compute bubble gap based on available width and number of choices
+            bubble_area_w = bubble_area_end - bubble_area_start
+            BUBBLE_GAP = bubble_area_w / max(n_choices, 1)
+            # Clamp minimum gap so bubbles don't overlap
+            min_gap = BUBBLE_RX * 2.2
+            if BUBBLE_GAP < min_gap:
+                BUBBLE_GAP = min_gap
+
             for j in range(n_choices):
                 bx = bubble_area_start + j * BUBBLE_GAP + BUBBLE_GAP / 2.0
                 by = cy
 
-                # Clamp bubble to stay within column
-                if bx + BUBBLE_RX > bubble_area_end:
+                # Stop if bubble would go outside column
+                if bx + BUBBLE_RX > bubble_area_end + 1:
                     break
 
                 # Draw bubble
@@ -294,7 +300,6 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
             meta["questions"].append(qmeta)
 
     lines.append("\\end{tikzpicture}")
-    lines.append("\\end{center}")
     return "\n".join(lines), meta
 
 
@@ -306,9 +311,9 @@ def _render_questions_tex_single_block(subject: dict) -> tuple[str, dict]:
         qs = []
 
     # Calculate capacity
-    HEADER_OFFSET = 33.0
+    HEADER_OFFSET = 22.0
     MARGIN_BOTTOM = 14.0
-    ROW_HEIGHT = 7.2
+    ROW_HEIGHT = 7.0
     try:
         if isinstance(subject, dict):
             ROW_HEIGHT = float(subject.get("row_h", ROW_HEIGHT))

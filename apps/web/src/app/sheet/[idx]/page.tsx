@@ -14,6 +14,7 @@ export default function SheetPage() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [digits, setDigits] = useState(Array(10).fill(""));
+  const digitRefs = useRef<(HTMLInputElement | null)[]>(Array(10).fill(null));
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -28,9 +29,21 @@ export default function SheetPage() {
   }, [idx]);
 
   function handleDigitChange(pos: number, val: string) {
+    const ch = val.replace(/\D/g, "").slice(-1);
     const next = [...digits];
-    next[pos] = val.slice(-1);
+    next[pos] = ch;
     setDigits(next);
+    // Auto-advance to next digit input
+    if (ch && pos < 9) {
+      digitRefs.current[pos + 1]?.focus();
+    }
+  }
+
+  function handleDigitKeyDown(pos: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !digits[pos] && pos > 0) {
+      // Move back on backspace if current is empty
+      digitRefs.current[pos - 1]?.focus();
+    }
   }
 
   async function handleGenerate(e: React.FormEvent) {
@@ -102,11 +115,13 @@ export default function SheetPage() {
               {digits.map((d, i) => (
                 <input
                   key={i}
+                  ref={(el) => { digitRefs.current[i] = el; }}
                   type="text"
                   maxLength={1}
                   inputMode="numeric"
                   value={d}
                   onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleDigitKeyDown(i, e)}
                   className="w-8 h-10 text-center text-sm"
                 />
               ))}
