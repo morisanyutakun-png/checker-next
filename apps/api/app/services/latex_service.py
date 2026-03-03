@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -12,6 +13,8 @@ from pathlib import Path
 from typing import Any
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 BASE = Path(__file__).resolve().parent.parent.parent  # apps/api
@@ -371,11 +374,11 @@ def render_tex_source(subject: dict, cand_name: str = "", exam_number: str = "")
 
         header_lines: list[str] = []
         if isinstance(subject, dict) and subject.get("name"):
-            header_lines.append("\\newcommand{\\SubjectName}{%s}" % latex_escape(subject.get("name")))
+            header_lines.append("\\renewcommand{\\SubjectName}{%s}" % latex_escape(subject.get("name")))
         if cand_name:
-            header_lines.append("\\newcommand{\\CandidateName}{%s}" % latex_escape(cand_name))
+            header_lines.append("\\renewcommand{\\CandidateName}{%s}" % latex_escape(cand_name))
         if exam_number:
-            header_lines.append("\\newcommand{\\ExamNumber}{%s}" % latex_escape(exam_number))
+            header_lines.append("\\renewcommand{\\ExamNumber}{%s}" % latex_escape(exam_number))
         header = "\n".join(header_lines) + ("\n" if header_lines else "")
 
         try:
@@ -401,6 +404,13 @@ def render_tex_source(subject: dict, cand_name: str = "", exam_number: str = "")
         except Exception:
             pass
 
+        # Insert header (\newcommand definitions) into preamble,
+        # NOT before \documentclass (which would be invalid LaTeX).
+        if header and "\\begin{document}" in content:
+            content = content.replace("\\begin{document}", header + "\\begin{document}", 1)
+        elif header:
+            content = header + content
+
         if "%%QUESTIONS%%" in content:
             content = content.replace("%%QUESTIONS%%", questions_tex)
         elif "\\end{document}" in content:
@@ -408,7 +418,7 @@ def render_tex_source(subject: dict, cand_name: str = "", exam_number: str = "")
         else:
             content = content + "\n" + questions_tex
 
-        return True, (header + content, questions_meta)
+        return True, (content, questions_meta)
     except Exception:
         import traceback
         return False, ("render_error", traceback.format_exc())
@@ -443,11 +453,13 @@ def compile_latex_and_save(subject: dict, cand_name: str = "", exam_number: str 
 
         cmd = [xe_path or "xelatex", "-interaction=nonstopmode", "-halt-on-error", "sheet.tex"]
         try:
+            logger.info("Running xelatex: %s", " ".join(cmd))
             proc = subprocess.run(cmd, cwd=td, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=90)
             out = proc.stdout.decode("utf-8", errors="replace")
             err = proc.stderr.decode("utf-8", errors="replace")
             if proc.returncode != 0:
                 logs = out + "\n" + err
+                logger.error("xelatex failed (rc=%d):\n%s", proc.returncode, logs[-2000:])
                 return False, ("latex_failed", logs)
             pdf_path = os.path.join(td, "sheet.pdf")
             if not os.path.exists(pdf_path):
