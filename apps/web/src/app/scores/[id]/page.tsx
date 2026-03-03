@@ -44,63 +44,66 @@ export default function ScoreDetailPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-24">
+        <div className="spinner" />
       </div>
     );
 
   if (!score)
     return (
-      <div className="text-center py-20">
+      <div className="text-center py-24 animate-fade-in">
+        <div className="text-4xl mb-4 opacity-50">🔍</div>
         <h1 className="text-xl font-semibold">採点結果が見つかりません</h1>
+        <a href="/scores" className="btn btn-primary mt-4 inline-flex">一覧に戻る</a>
       </div>
     );
 
   const { result } = score;
   const s = result.score;
+  const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">採点結果</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {score.subject_name && `教科: ${score.subject_name} — `}
-            {score.created_at && new Date(score.created_at).toLocaleString("ja-JP")}
+            {score.subject_name && `${score.subject_name} — `}
+            {score.created_at && new Date(score.created_at).toLocaleString("ja-JP", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </p>
         </div>
-        <a href="/scores" className="btn btn-secondary text-sm">
+        <a href="/scores" className="btn btn-ghost text-sm">
           ← 一覧へ
         </a>
       </div>
 
-      {/* Score summary */}
-      <div className="card flex items-center justify-between">
-        <div>
-          <p className="text-sm text-[var(--text-secondary)]">正答数</p>
-          <p className="text-4xl font-bold mt-1">
-            {s.correct}
-            <span className="text-xl text-[var(--text-secondary)] font-normal"> / {s.total}</span>
-          </p>
+      {/* Score summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="stat-card">
+          <p className="stat-card__value" style={{ color: "var(--accent)" }}>{s.correct}</p>
+          <p className="stat-card__label">正解数</p>
         </div>
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold"
-          style={{
-            background:
-              s.total > 0 && s.correct / s.total >= 0.8
-                ? "rgba(52,199,89,0.12)"
-                : s.total > 0 && s.correct / s.total >= 0.5
-                  ? "rgba(255,149,0,0.12)"
-                  : "rgba(255,59,48,0.12)",
-            color:
-              s.total > 0 && s.correct / s.total >= 0.8
-                ? "var(--success)"
-                : s.total > 0 && s.correct / s.total >= 0.5
-                  ? "var(--warning)"
-                  : "var(--danger)",
-          }}
-        >
-          {s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0}%
+        <div className="stat-card">
+          <p className="stat-card__value">{s.total}</p>
+          <p className="stat-card__label">問題数</p>
+        </div>
+        <div className="stat-card">
+          <p
+            className="stat-card__value"
+            style={{
+              color: pct >= 80 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--danger)",
+            }}
+          >
+            {pct}%
+          </p>
+          <p className="stat-card__label">正答率</p>
         </div>
       </div>
 
@@ -111,18 +114,21 @@ export default function ScoreDetailPage() {
           <div key={pidx} className="card space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-lg">
-                ページ {pidx + 1} — {pc}/{page.questions.length}
+                ページ {pidx + 1}
+                <span className="text-[var(--text-secondary)] font-normal ml-2">
+                  {pc}/{page.questions.length}
+                </span>
               </h2>
               <a
                 href={annotatedPageUrl(scoreId, pidx + 1)}
                 target="_blank"
-                className="text-sm"
+                className="btn btn-ghost text-sm"
               >
-                注釈画像を開く
+                注釈画像
               </a>
             </div>
 
-            <div className="overflow-x-auto -mx-2">
+            <div className="overflow-x-auto -mx-1.5">
               <table>
                 <thead>
                   <tr>
@@ -141,7 +147,7 @@ export default function ScoreDetailPage() {
                           ? q.choices?.[q.selected_index]?.label || q.selected_index + 1
                           : "—"}
                       </td>
-                      <td>
+                      <td className="tabular-nums">
                         {q.selected_score != null ? (q.selected_score * 100).toFixed(1) + "%" : "—"}
                       </td>
                       <td>

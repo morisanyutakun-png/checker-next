@@ -30,8 +30,8 @@ export default function AdminPage() {
 
   if (!config)
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-24">
+        <div className="spinner" />
       </div>
     );
 
@@ -105,21 +105,33 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">管理設定</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">管理設定</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+            教科・問題の設定を管理
+          </p>
+        </div>
         <div className="flex gap-2">
-          <a href={current ? `/sheet/${currentIdx}` : "#"} className="btn btn-secondary text-sm">
+          <a href={current ? `/sheet/${currentIdx}` : "#"} className="btn btn-ghost text-sm">
             プレビュー
           </a>
           <button onClick={handleSave} disabled={saving} className="btn btn-primary text-sm">
-            {saving ? "保存中..." : "保存"}
+            {saving ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                保存中
+              </>
+            ) : (
+              "保存"
+            )}
           </button>
         </div>
       </div>
 
       {flash && (
-        <div className="bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 rounded-xl px-4 py-2.5 text-sm font-medium">
+        <div className="toast toast-success">
           {flash}
         </div>
       )}

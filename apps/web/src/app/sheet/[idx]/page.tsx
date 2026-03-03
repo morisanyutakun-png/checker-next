@@ -58,8 +58,8 @@ export default function SheetPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-24">
+        <div className="spinner" />
       </div>
     );
 

@@ -640,6 +640,9 @@ def analyze_image(img: Image.Image, config: Dict[str, Any], dx_mm_override: Opti
 
     dx_mm, dy_mm, fallback_none_ratio, clamp_mm = _get_offsets_mm(config)
 
+    warnings = []
+    raw_omr_offsets = (config.get('omr_offsets') or {})
+
     # Priority order for offsets (highest -> lowest):
     #  1) explicit function call overrides (dx_mm_override/dy_mm_override)
     #  2) runtime Python overrides set by set_runtime_offsets() (optionally forced)
@@ -702,10 +705,6 @@ def analyze_image(img: Image.Image, config: Dict[str, Any], dx_mm_override: Opti
             })
     except Exception:
         pass
-    warnings = []
-
-    # record raw config for debugging
-    raw_omr_offsets = (config.get('omr_offsets') or {})
 
     # if clamp was applied, and it changed the requested value, add a warning
     try:
