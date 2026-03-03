@@ -1,33 +1,70 @@
-% Basic A4 landscape sheet template (raw .tex)
+% ═══════════════════════════════════════════════════════════
+%  OMR Mark Sheet – A4 Landscape (Clean Professional Design)
+% ═══════════════════════════════════════════════════════════
 \documentclass[10pt,a4paper,landscape]{article}
-\usepackage[margin=10mm]{geometry}
+\usepackage[top=12mm,bottom=12mm,left=14mm,right=14mm]{geometry}
 \usepackage{tikz}
 \usetikzlibrary{calc}
 \usepackage{eso-pic}
+\usepackage{xcolor}
 \usepackage{fontspec}
-\IfFontExistsTF{Noto Sans CJK JP}{\setmainfont{Noto Sans CJK JP}\setsansfont{Noto Sans CJK JP}}{\IfFontExistsTF{Hiragino Sans}{\setmainfont{Hiragino Sans}\setsansfont{Hiragino Sans}}{}}
+\IfFontExistsTF{Noto Sans CJK JP}{%
+  \setmainfont{Noto Sans CJK JP}%
+  \setsansfont{Noto Sans CJK JP}%
+}{%
+  \IfFontExistsTF{Hiragino Sans}{%
+    \setmainfont{Hiragino Sans}%
+    \setsansfont{Hiragino Sans}%
+  }{}%
+}
 \pagestyle{empty}
-% Default placeholders when server does not inject these macros.
-% Use \providecommand so that server-injected definitions override these.
+
+% ── Color definitions ──────────────────────────────────────
+\definecolor{headerBg}{HTML}{1a1a2e}
+\definecolor{headerText}{HTML}{ffffff}
+\definecolor{accentBlue}{HTML}{0066cc}
+\definecolor{gridLine}{HTML}{d0d0d0}
+\definecolor{gridLineFaint}{HTML}{e8e8e8}
+\definecolor{bubbleBorder}{HTML}{333333}
+\definecolor{labelBg}{HTML}{f0f4f8}
+\definecolor{sectionBg}{HTML}{f7f9fc}
+
+% ── Default placeholders ──────────────────────────────────
 \providecommand{\SubjectName}{\mbox{（科目未設定）}}
-\providecommand{\CandidateName}{\mbox{（氏名未設定）}}
-\providecommand{\ExamNumber}{\mbox{（受験番号未設定）}}
+\providecommand{\CandidateName}{\mbox{}}
+\providecommand{\ExamNumber}{\mbox{}}
+
 \begin{document}
 \sffamily
 
-
-
-% Candidate info macros injected by server:
-% \CandidateName and \ExamNumber
+% ── Header area ────────────────────────────────────────────
 \noindent
-\begin{tabular}{p{0.25\textwidth} p{0.65\textwidth}}
-  \textbf{科目:} & \fbox{\parbox[c][8mm][c]{0.6\textwidth}{\centering \SubjectName}} \\
-  \textbf{受験番号:} & \ExamNumber \\
-\end{tabular}
+\begin{tikzpicture}[x=1mm,y=1mm]
+  % Header background bar
+  \fill[headerBg, rounded corners=2mm] (0,0) rectangle (269,18);
 
-% Questions placeholder - server will replace %%QUESTIONS%% with generated TikZ
+  % Title
+  \node[anchor=west, white, font=\large\bfseries] at (6, 12) {マークシート解答用紙};
+  \node[anchor=west, white!70, font=\small] at (6, 5) {\SubjectName};
+
+  % Exam number box
+  \fill[white, rounded corners=1.5mm] (140, 1.5) rectangle (210, 16.5);
+  \node[anchor=west, headerBg, font=\small\bfseries] at (143, 12) {受験番号};
+  \node[anchor=west, accentBlue, font=\normalsize] at (168, 12) {\ExamNumber};
+  \node[anchor=west, headerBg, font=\small\bfseries] at (143, 5) {氏名};
+  \node[anchor=west, font=\normalsize] at (158, 5) {\CandidateName};
+
+  % Instructions box
+  \fill[white, rounded corners=1.5mm] (214, 1.5) rectangle (267, 16.5);
+  \node[anchor=north west, font=\fontsize{6.5pt}{8pt}\selectfont, text width=50mm] at (216, 15.5) {%
+    {\bfseries\color{accentBlue}記入方法}\\[1pt]%
+    該当する選択肢を\\HB以上の鉛筆で\\塗りつぶしてください。%
+  };
+\end{tikzpicture}
+
+\vspace{4mm}
+
+% ── Questions section ──────────────────────────────────────
 %%QUESTIONS%%
-
-
 
 \end{document}

@@ -77,33 +77,37 @@ export default function HomePage() {
   return (
     <div className="space-y-10 animate-fade-in">
       {/* Hero */}
-      <section className="text-center py-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-light)] text-[var(--accent)] text-xs font-semibold mb-4">
+      <section className="text-center py-12 hero-gradient rounded-2xl">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--success-light)] text-[var(--success)] text-xs font-semibold mb-6 border border-[var(--success)]/20">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
-          稼働中
+          システム稼働中
         </div>
-        <h1 className="text-[2.5rem] font-bold tracking-tight leading-tight mb-3">
+        <h1 className="text-[2.75rem] font-bold tracking-tight leading-[1.15] mb-4">
           マークシート
           <br />
-          <span className="text-[var(--accent)]">自動採点</span>
+          <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-brand)" }}>
+            自動採点
+          </span>
         </h1>
-        <p className="text-[var(--text-secondary)] text-lg max-w-md mx-auto">
-          PDFをアップロードするだけで、OMR解析による高精度な採点を実行
+        <p className="text-[var(--text-secondary)] text-base max-w-md mx-auto leading-relaxed">
+          PDFをアップロードするだけで、
+          <br className="sm:hidden" />
+          OMR解析による高精度な自動採点を実行します
         </p>
       </section>
 
       {/* Upload Card */}
       <section className="card max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent-light)] flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--gradient-brand)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-semibold">採点を開始</h2>
+            <h2 className="text-lg font-semibold tracking-tight">採点を開始</h2>
             <p className="text-sm text-[var(--text-secondary)]">スキャンしたPDFをアップロードしてください</p>
           </div>
         </div>
@@ -209,20 +213,25 @@ export default function HomePage() {
       {/* Subjects Grid */}
       {subjects.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold mb-4">登録教科</h2>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-semibold tracking-tight">登録教科</h2>
+            <a href="/admin" className="btn btn-ghost text-sm">
+              管理 →
+            </a>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {subjects.map((s, i) => (
               <a
                 key={i}
                 href={`/sheet/${i}`}
-                className="card group flex items-center gap-4 hover:border-[var(--accent)] cursor-pointer transition-all"
+                className="card group flex items-center gap-4 hover:border-[var(--accent)] cursor-pointer transition-all hover:translate-y-[-2px]"
               >
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent-light)] flex items-center justify-center font-bold text-[var(--accent)] group-hover:scale-110 transition-transform">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white text-sm group-hover:scale-110 transition-transform" style={{ background: "var(--gradient-brand)" }}>
                   {i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{s.name || `教科 ${i + 1}`}</p>
-                  <p className="text-xs text-[var(--text-tertiary)]">
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                     {s.questions?.length || 0} 問
                   </p>
                 </div>
@@ -274,19 +283,19 @@ function ResultView({ result }: { result: UploadResult }) {
       <div className="card">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">採点結果</h2>
+            <h2 className="text-xl font-semibold tracking-tight">採点結果</h2>
             {subject && (
-              <p className="text-sm text-[var(--text-secondary)] mt-0.5">教科: {subject}</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">教科: {subject}</p>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <div className="text-right">
               <p className="text-3xl font-bold tracking-tight">
                 {score.correct}
-                <span className="text-lg text-[var(--text-secondary)] font-normal"> / {score.total}</span>
+                <span className="text-base text-[var(--text-secondary)] font-normal"> / {score.total}</span>
               </p>
             </div>
-            <ScoreRing pct={pct} size={56} />
+            <ScoreRing pct={pct} size={60} />
           </div>
         </div>
       </div>
