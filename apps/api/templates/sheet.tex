@@ -5,7 +5,7 @@
 \usetikzlibrary{calc}
 \usepackage{eso-pic}
 \usepackage{fontspec}
-\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\IfFontExistsTF{Noto Sans JP}{\setsansfont{Noto Sans JP}}{\IfFontExistsTF{Hiragino Sans}{\setsansfont{Hiragino Sans}}{}}}
+\IfFontExistsTF{Noto Sans CJK JP}{\setmainfont{Noto Sans CJK JP}\setsansfont{Noto Sans CJK JP}}{\IfFontExistsTF{Hiragino Sans}{\setmainfont{Hiragino Sans}\setsansfont{Hiragino Sans}}{}}
 \pagestyle{empty}
 % Default placeholders when server does not inject these macros.
 % Use \providecommand so that server-injected definitions override these.

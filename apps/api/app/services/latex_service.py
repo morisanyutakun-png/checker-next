@@ -453,17 +453,20 @@ def compile_latex_and_save(subject: dict, cand_name: str = "", exam_number: str 
 
         cmd = [xe_path or "xelatex", "-interaction=nonstopmode", "-halt-on-error", "sheet.tex"]
         try:
-            logger.info("Running xelatex: %s", " ".join(cmd))
+            import sys
+            print(f"[latex] Running: {' '.join(cmd)}", file=sys.stderr, flush=True)
             proc = subprocess.run(cmd, cwd=td, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=90)
             out = proc.stdout.decode("utf-8", errors="replace")
             err = proc.stderr.decode("utf-8", errors="replace")
             if proc.returncode != 0:
                 logs = out + "\n" + err
-                logger.error("xelatex failed (rc=%d):\n%s", proc.returncode, logs[-2000:])
+                print(f"[latex] FAILED (rc={proc.returncode}):\n{logs[-2000:]}", file=sys.stderr, flush=True)
                 return False, ("latex_failed", logs)
             pdf_path = os.path.join(td, "sheet.pdf")
             if not os.path.exists(pdf_path):
+                print(f"[latex] PDF not generated:\n{(out + err)[-1000:]}", file=sys.stderr, flush=True)
                 return False, ("pdf_missing", out + "\n" + err)
+            print(f"[latex] OK – PDF generated", file=sys.stderr, flush=True)
 
             gid = uuid.uuid4().hex
             dst = GENERATED_DIR / f"{gid}.pdf"
