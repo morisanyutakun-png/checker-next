@@ -9,16 +9,21 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# Neon requires SSL; detect from connection string
+# asyncpg does not understand the libpq "sslmode" query-param.
+# Strip it from the URL and pass SSL via connect_args instead.
+_db_url = settings.DATABASE_URL
 _connect_args: dict = {}
-if "neon.tech" in settings.DATABASE_URL or "sslmode=require" in settings.DATABASE_URL:
+if "neon.tech" in _db_url or "sslmode=" in _db_url:
     _ssl_ctx = ssl.create_default_context()
     _ssl_ctx.check_hostname = False
     _ssl_ctx.verify_mode = ssl.CERT_NONE
     _connect_args = {"ssl": _ssl_ctx}
+    # Remove sslmode param so asyncpg doesn't choke on it
+    import re
+    _db_url = re.sub(r"[?&]sslmode=[^&]*", "", _db_url)
 
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _db_url,
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_size=5,
