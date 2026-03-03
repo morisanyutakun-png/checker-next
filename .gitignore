@@ -1,0 +1,42 @@
+# ── Dependencies ──
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── Build outputs ──
+.next/
+out/
+dist/
+*.egg-info/
+
+# ── Environment ──
+.env
+.env.local
+.env.production
+
+# ── Storage (generated at runtime) ──
+apps/api/storage/generated_pdfs/
+apps/api/storage/scores/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ── Docker ──
+docker-compose.override.yml
+
+# ── LaTeX aux files ──
+*.aux
+*.log
+*.synctex.gz
+
+# ── Misc ──
+*.bak
+*.tmp
+coverage/
+.pytest_cache/

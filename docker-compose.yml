@@ -1,0 +1,93 @@
+services:
+  # ── PostgreSQL (dev) ─────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-checker}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── FastAPI backend ──────────────────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      target: dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/checker
+      DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/checker
+      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080"
+      STORAGE_DIR: /app/storage
+      SECRET_KEY: dev-secret-change-me
+      DEBUG: "true"
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+      - api_storage:/app/storage
+
+  # ── Next.js frontend ────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      target: dev
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_BASE_URL: http://api:8000
+      NEXT_PUBLIC_API_BASE_URL: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+
+  # ── nginx reverse proxy (optional) ──────────────────────────
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    profiles:
+      - with-nginx
+
+  # ── pgAdmin (optional) ──────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    profiles:
+      - tools
+
+volumes:
+  pgdata:
+  api_storage:

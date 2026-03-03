@@ -1,0 +1,33 @@
+% Two-page variant: header on first page, questions split in half
+\documentclass[10pt,a4paper,landscape]{article}
+\usepackage[margin=10mm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{eso-pic}
+\usepackage{fontspec}
+\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\IfFontExistsTF{Noto Sans JP}{\setsansfont{Noto Sans JP}}{\IfFontExistsTF{Hiragino Sans}{\setsansfont{Hiragino Sans}}{}}}
+\pagestyle{empty}
+% Default placeholders when server does not inject these macros.
+% Use \providecommand so that server-injected definitions override these.
+\providecommand{\SubjectName}{\mbox{（科目未設定）}}
+\providecommand{\CandidateName}{\mbox{（氏名未設定）}}
+\providecommand{\ExamNumber}{\mbox{（受験番号未設定）}}
+\begin{document}
+\sffamily
+
+
+
+% Candidate info macros injected by server:
+% \CandidateName and \ExamNumber
+\noindent
+\begin{tabular}{p{0.25\textwidth} p{0.65\textwidth}}
+  \textbf{科目:} & \fbox{\parbox[c][8mm][c]{0.6\textwidth}{\centering \SubjectName}} \\
+  \textbf{受験番号:} & \ExamNumber \\
+\end{tabular}
+
+% Questions placeholder - server will replace %%QUESTIONS%% with generated TikZ
+%%QUESTIONS%%
+
+
+
+\end{document}
