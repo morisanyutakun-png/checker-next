@@ -2,7 +2,7 @@
 %  OMR Mark Sheet – A4 Landscape (Clean Professional Design)
 % ═══════════════════════════════════════════════════════════
 \documentclass[10pt,a4paper,landscape]{article}
-\usepackage[top=12mm,bottom=12mm,left=14mm,right=14mm]{geometry}
+\usepackage[top=8mm,bottom=10mm,left=14mm,right=14mm]{geometry}
 \usepackage{tikz}
 \usetikzlibrary{calc}
 \usepackage{eso-pic}
@@ -41,28 +41,28 @@
 \noindent
 \begin{tikzpicture}[x=1mm,y=1mm]
   % Header background bar
-  \fill[headerBg, rounded corners=1.5mm] (0,0) rectangle (269,14);
+  \fill[headerBg, rounded corners=1.5mm] (0,0) rectangle (269,12);
 
   % Title
-  \node[anchor=west, white, font=\normalsize\bfseries] at (5, 9.5) {マークシート解答用紙};
-  \node[anchor=west, white!70, font=\footnotesize] at (5, 3.5) {\SubjectName};
+  \node[anchor=west, white, font=\normalsize\bfseries] at (5, 8) {マークシート解答用紙};
+  \node[anchor=west, white!70, font=\footnotesize] at (5, 3) {\SubjectName};
 
   % Exam number box
-  \fill[white, rounded corners=1mm] (120, 1.2) rectangle (190, 12.8);
-  \node[anchor=west, headerBg, font=\footnotesize\bfseries] at (122, 9.5) {受験番号};
-  \node[anchor=west, accentBlue, font=\small] at (143, 9.5) {\ExamNumber};
-  \node[anchor=west, headerBg, font=\footnotesize\bfseries] at (122, 3.5) {氏名};
-  \node[anchor=west, font=\small] at (135, 3.5) {\CandidateName};
+  \fill[white, rounded corners=1mm] (120, 1) rectangle (190, 11);
+  \node[anchor=west, headerBg, font=\footnotesize\bfseries] at (122, 8) {受験番号};
+  \node[anchor=west, accentBlue, font=\small] at (143, 8) {\ExamNumber};
+  \node[anchor=west, headerBg, font=\footnotesize\bfseries] at (122, 3) {氏名};
+  \node[anchor=west, font=\small] at (135, 3) {\CandidateName};
 
   % Instructions box
-  \fill[white, rounded corners=1mm] (194, 1.2) rectangle (267, 12.8);
-  \node[anchor=north west, font=\fontsize{5.5pt}{7pt}\selectfont, text width=50mm] at (196, 12) {%
+  \fill[white, rounded corners=1mm] (194, 1) rectangle (267, 11);
+  \node[anchor=north west, font=\fontsize{5.5pt}{7pt}\selectfont, text width=50mm] at (196, 10) {%
     {\bfseries\color{accentBlue}記入方法}\\[0.5pt]%
     該当する選択肢をHB以上の鉛筆で塗りつぶしてください。%
   };
 \end{tikzpicture}
 
-\vspace{1mm}
+\vspace{0.5mm}
 
 % ── Questions section ──────────────────────────────────────
 %%QUESTIONS%%

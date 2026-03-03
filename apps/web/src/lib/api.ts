@@ -29,6 +29,15 @@ export interface SubjectData {
   sheet_template?: string;
   questions: Record<string, unknown>[];
   extra?: Record<string, unknown>;
+  layout?: {
+    cols?: number;
+    row_height?: number;
+    header_offset_mm?: number;
+    bubble_rx?: number;
+    bubble_ry?: number;
+    label_width?: number;
+    col_gap?: number;
+  };
   [key: string]: unknown;
 }
 

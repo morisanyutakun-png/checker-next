@@ -108,16 +108,8 @@ def _generate_omr_marks_block(subject: dict) -> str:
 def _render_questions_tex(subject: dict) -> tuple[str, dict]:
     """Generate a TeX chunk for question bubbles.
 
-    Layout strategy:
-    ┌──────────────────────────────────────────────────────────┐
-    │  HEADER (already rendered by template)  ~25mm from top  │
-    │──────────────────────────────────────────────────────────│
-    │  Col 1          Col 2          Col 3          Col 4     │
-    │  Q1 ①②③④⑤   Q11 ①②③④⑤  Q21 ①②③④⑤  Q31 ①②③④⑤ │
-    │  Q2 ①②③④⑤   Q12 ①②③④⑤  Q22 ①②③④⑤  Q32 ①②③④⑤ │
-    │  ...            ...            ...            ...       │
-    │  Q10 ①②③④⑤  Q20 ①②③④⑤  Q30 ①②③④⑤  Q40 ①②③④⑤ │
-    └──────────────────────────────────────────────────────────┘
+    Supports up to 15+ choices per question by dynamically sizing bubbles
+    to fit within the available column width.
 
     All coordinates use TikZ with (0,0) at bottom-left of the page.
     y increases upward.
@@ -131,31 +123,28 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
         return "% No questions defined\n", {"questions": [], "bubbles": []}
 
     # ── Layout parameters (all in mm) ───────────────────────
-    # Margins from page edges
     MARGIN_LEFT = 14.0
     MARGIN_RIGHT = 14.0
-    MARGIN_BOTTOM = 14.0
+    MARGIN_BOTTOM = 12.0
 
-    # Top of the question area (distance from TOP of page)
-    # Header is ~18mm, then 1mm gap → questions start at 22mm from top
-    HEADER_OFFSET = 22.0
+    # Defaults — can all be overridden from subject config / layout dict
+    HEADER_OFFSET = 20.0   # distance from page top to first question row
+    ROW_HEIGHT = 6.0       # vertical distance between question centres
+    BUBBLE_RX = 2.0        # default horizontal radius (will auto-shrink)
+    BUBBLE_RY = 1.8        # default vertical radius (will auto-shrink)
+    LABEL_COL_W = 10.0     # width for the question number label
+    COL_GAP = 3.0          # gap between columns
 
-    # Row spacing
-    ROW_HEIGHT = 7.0      # vertical distance between question centres
-    BUBBLE_RX = 2.2       # horizontal radius of each bubble ellipse
-    BUBBLE_RY = 2.0       # vertical radius of each bubble ellipse
-
-    # Label column
-    LABEL_COL_W = 12.0    # width for the question number label
-
-    # Overrides from subject config
+    # Read overrides from subject-level "layout" dict or top-level keys
+    layout = subject.get("layout", {}) if isinstance(subject, dict) else {}
     try:
         if isinstance(subject, dict):
-            ROW_HEIGHT = float(subject.get("row_h", ROW_HEIGHT))
-            LABEL_COL_W = float(subject.get("label_w", LABEL_COL_W))
-            BUBBLE_RX = float(subject.get("bubble_rx", BUBBLE_RX))
-            BUBBLE_RY = float(subject.get("bubble_ry", BUBBLE_RY))
-            HEADER_OFFSET = float(subject.get("header_offset_mm", HEADER_OFFSET))
+            HEADER_OFFSET = float(layout.get("header_offset_mm", subject.get("header_offset_mm", HEADER_OFFSET)))
+            ROW_HEIGHT = float(layout.get("row_height", subject.get("row_h", ROW_HEIGHT)))
+            LABEL_COL_W = float(layout.get("label_width", subject.get("label_w", LABEL_COL_W)))
+            BUBBLE_RX = float(layout.get("bubble_rx", subject.get("bubble_rx", BUBBLE_RX)))
+            BUBBLE_RY = float(layout.get("bubble_ry", subject.get("bubble_ry", BUBBLE_RY)))
+            COL_GAP = float(layout.get("col_gap", subject.get("col_gap", COL_GAP)))
     except Exception:
         pass
 
@@ -165,18 +154,31 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
     usable_h = PAGE_H_MM - HEADER_OFFSET - MARGIN_BOTTOM
     max_rows_per_col = max(1, int(usable_h / ROW_HEIGHT))
 
-    # Try to fit in 4 cols, fall back to more if needed
-    desired_cols = int(subject.get("cols", 4)) if isinstance(subject, dict) else 4
+    desired_cols = int(layout.get("cols", subject.get("cols", 4))) if isinstance(subject, dict) else 4
+    # Clamp columns to reasonable range
+    desired_cols = max(1, min(desired_cols, 8))
+
     rows_per_col = (total_q + desired_cols - 1) // desired_cols if total_q > 0 else 1
     if rows_per_col > max_rows_per_col:
         rows_per_col = max_rows_per_col
     cols_used = (total_q + rows_per_col - 1) // rows_per_col if rows_per_col > 0 else 1
 
-    # Column spacing (evenly distribute across usable width)
-    col_w = usable_w / cols_used
+    # Column width (evenly distribute, accounting for gaps)
+    total_gap = COL_GAP * max(0, cols_used - 1)
+    col_w = (usable_w - total_gap) / cols_used
 
     # Top-Y for the first row (TikZ coords: 0 at bottom, PAGE_H at top)
     top_y = PAGE_H_MM - HEADER_OFFSET
+
+    # ── Determine max choices across all questions for adaptive sizing ──
+    max_choices = 4
+    for q in qs:
+        if isinstance(q, dict):
+            ch = q.get("choices")
+            nc = int(q.get("num_choices") or subject.get("num_choices") or 4)
+            if isinstance(ch, list) and len(ch) > 0:
+                nc = len(ch)
+            max_choices = max(max_choices, nc)
 
     # ── Generate TikZ ───────────────────────────────────────
     lines = [
@@ -188,12 +190,15 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
     meta: dict[str, Any] = {"bubbles": [], "questions": []}
 
     for col in range(cols_used):
+        # Column left edge
+        col_left_x = MARGIN_LEFT + col * (col_w + COL_GAP)
+
         # Column separator line
-        col_left_x = MARGIN_LEFT + col * col_w
         if col > 0:
+            sep_x = col_left_x - COL_GAP / 2.0
             lines.append(
                 "  \\draw[gridLine, line width=0.3pt] (%.1f, %.1f) -- (%.1f, %.1f);"
-                % (col_left_x - 2, top_y + 2, col_left_x - 2, top_y - rows_per_col * ROW_HEIGHT - 2)
+                % (sep_x, top_y + 2, sep_x, top_y - rows_per_col * ROW_HEIGHT - 2)
             )
 
         for row in range(rows_per_col):
@@ -202,7 +207,6 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
                 continue
 
             q = qs[q_idx]
-            # Global index for metadata
             global_idx = q_idx
             if isinstance(q, dict) and q.get("_global_index") is not None:
                 try:
@@ -212,7 +216,6 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
 
             # Centre Y of this row
             cy = top_y - (row + 0.5) * ROW_HEIGHT
-            # Left edge of this column
             cx_start = col_left_x
 
             # ── Question label ──
@@ -222,25 +225,26 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
 
             # Label background
             lines.append(
-                "  \\fill[labelBg, rounded corners=0.8mm] (%.2f, %.2f) rectangle (%.2f, %.2f);"
-                % (cx_start + 1, cy - ROW_HEIGHT / 2.0 + 0.6,
-                   cx_start + LABEL_COL_W - 1, cy + ROW_HEIGHT / 2.0 - 0.6)
+                "  \\fill[labelBg, rounded corners=0.6mm] (%.2f, %.2f) rectangle (%.2f, %.2f);"
+                % (cx_start + 0.5, cy - ROW_HEIGHT / 2.0 + 0.4,
+                   cx_start + LABEL_COL_W - 0.5, cy + ROW_HEIGHT / 2.0 - 0.4)
             )
             lines.append(
-                "  \\node[anchor=center, font=\\small\\bfseries] at (%.2f, %.2f) {%s};"
+                "  \\node[anchor=center, font=\\footnotesize\\bfseries] at (%.2f, %.2f) {%s};"
                 % (label_cx, cy, latex_escape(qlabel))
             )
 
-            # ── Horizontal guide line ──
-            bubble_area_start = cx_start + LABEL_COL_W + 1
-            bubble_area_end = cx_start + col_w - 4
+            # ── Bubble area ──
+            bubble_area_start = cx_start + LABEL_COL_W + 0.5
+            bubble_area_end = cx_start + col_w - 1.0
+
+            # Horizontal guide line
             lines.append(
                 "  \\draw[gridLineFaint, line width=0.2pt] (%.2f, %.2f) -- (%.2f, %.2f);"
                 % (bubble_area_start, cy - ROW_HEIGHT / 2.0, bubble_area_end, cy - ROW_HEIGHT / 2.0)
             )
 
-            # ── Bubbles ──
-            # Determine number of choices
+            # ── Determine choices ──
             choices = q.get("choices") if isinstance(q, dict) and isinstance(q.get("choices"), list) and len(q.get("choices")) > 0 else None
             if choices:
                 n_choices = len(choices)
@@ -252,34 +256,42 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
                 n_choices = int(q.get("num_choices") or subject.get("num_choices") or 4) if isinstance(q, dict) else 4
                 labels_list = [str(i + 1) for i in range(n_choices)]
 
+            # ── Adaptive bubble sizing ──
+            bubble_area_w = bubble_area_end - bubble_area_start
+            # Each bubble gets an equal slot
+            slot_w = bubble_area_w / max(n_choices, 1)
+
+            # Scale bubble radius to fit slot, with padding
+            effective_rx = min(BUBBLE_RX, (slot_w - 0.6) / 2.0)
+            effective_ry = min(BUBBLE_RY, (ROW_HEIGHT - 1.2) / 2.0)
+            # Minimum readable size
+            effective_rx = max(effective_rx, 1.0)
+            effective_ry = max(effective_ry, 0.9)
+
+            # Font size scales with bubble size
+            if n_choices <= 6:
+                font_size = "6pt"
+            elif n_choices <= 10:
+                font_size = "5pt"
+            else:
+                font_size = "4pt"
+
             qmeta: dict[str, Any] = {"index": global_idx, "label": qlabel, "bubbles": []}
 
-            # Dynamically compute bubble gap based on available width and number of choices
-            bubble_area_w = bubble_area_end - bubble_area_start
-            BUBBLE_GAP = bubble_area_w / max(n_choices, 1)
-            # Clamp minimum gap so bubbles don't overlap
-            min_gap = BUBBLE_RX * 2.2
-            if BUBBLE_GAP < min_gap:
-                BUBBLE_GAP = min_gap
-
             for j in range(n_choices):
-                bx = bubble_area_start + j * BUBBLE_GAP + BUBBLE_GAP / 2.0
+                bx = bubble_area_start + (j + 0.5) * slot_w
                 by = cy
-
-                # Stop if bubble would go outside column
-                if bx + BUBBLE_RX > bubble_area_end + 1:
-                    break
 
                 # Draw bubble
                 lines.append(
-                    "  \\draw[bubbleBorder, line width=0.8pt] (%.2f, %.2f) ellipse (%.2fmm and %.2fmm);"
-                    % (bx, by, BUBBLE_RX, BUBBLE_RY)
+                    "  \\draw[bubbleBorder, line width=0.6pt] (%.2f, %.2f) ellipse (%.2fmm and %.2fmm);"
+                    % (bx, by, effective_rx, effective_ry)
                 )
                 # Label inside bubble
                 lbl = labels_list[j] if j < len(labels_list) else str(j + 1)
                 lines.append(
-                    "  \\node[font=\\fontsize{6pt}{6pt}\\selectfont, black!55] at (%.2f, %.2f) {%s};"
-                    % (bx, by, latex_escape(lbl))
+                    "  \\node[font=\\fontsize{%s}{%s}\\selectfont, black!60] at (%.2f, %.2f) {%s};"
+                    % (font_size, font_size, bx, by, latex_escape(lbl))
                 )
 
                 # Metadata for OMR grading
@@ -290,14 +302,24 @@ def _render_questions_tex(subject: dict) -> tuple[str, dict]:
                     "y_mm_top": round(float(PAGE_H_MM - by), 3),
                     "x_norm": round(float(bx) / PAGE_W_MM, 6),
                     "y_norm_top": round(float((PAGE_H_MM - by) / PAGE_H_MM), 6),
-                    "width_mm": round(float(BUBBLE_RX * 2.0), 3),
-                    "height_mm": round(float(BUBBLE_RY * 2.0), 3),
-                    "w_norm": round(float((BUBBLE_RX * 2.0) / PAGE_W_MM), 6),
-                    "h_norm": round(float((BUBBLE_RY * 2.0) / PAGE_H_MM), 6),
+                    "width_mm": round(float(effective_rx * 2.0), 3),
+                    "height_mm": round(float(effective_ry * 2.0), 3),
+                    "w_norm": round(float((effective_rx * 2.0) / PAGE_W_MM), 6),
+                    "h_norm": round(float((effective_ry * 2.0) / PAGE_H_MM), 6),
                     "label": lbl,
                 })
 
             meta["questions"].append(qmeta)
+
+    # Store layout metadata for debugging / OMR
+    meta["layout"] = {
+        "header_offset_mm": HEADER_OFFSET,
+        "row_height_mm": ROW_HEIGHT,
+        "cols_used": cols_used,
+        "rows_per_col": rows_per_col,
+        "max_choices": max_choices,
+        "label_col_w": LABEL_COL_W,
+    }
 
     lines.append("\\end{tikzpicture}")
     return "\n".join(lines), meta
@@ -310,18 +332,14 @@ def _render_questions_tex_single_block(subject: dict) -> tuple[str, dict]:
     except Exception:
         qs = []
 
-    # Calculate capacity
-    HEADER_OFFSET = 22.0
-    MARGIN_BOTTOM = 14.0
-    ROW_HEIGHT = 7.0
-    try:
-        if isinstance(subject, dict):
-            ROW_HEIGHT = float(subject.get("row_h", ROW_HEIGHT))
-            HEADER_OFFSET = float(subject.get("header_offset_mm", HEADER_OFFSET))
-    except Exception:
-        pass
+    # Calculate capacity using same defaults as _render_questions_tex
+    layout = subject.get("layout", {}) if isinstance(subject, dict) else {}
+    HEADER_OFFSET = float(layout.get("header_offset_mm", subject.get("header_offset_mm", 20.0))) if isinstance(subject, dict) else 20.0
+    MARGIN_BOTTOM = 12.0
+    ROW_HEIGHT = float(layout.get("row_height", subject.get("row_h", 6.0))) if isinstance(subject, dict) else 6.0
 
-    cols = int(subject.get("cols", 4)) if isinstance(subject, dict) else 4
+    cols = int(layout.get("cols", subject.get("cols", 4))) if isinstance(subject, dict) else 4
+    cols = max(1, min(cols, 8))
     usable_h = PAGE_H_MM - HEADER_OFFSET - MARGIN_BOTTOM
     max_rows_per_col = max(1, int(usable_h / ROW_HEIGHT))
     capacity = max_rows_per_col * max(1, cols)
